@@ -1,13 +1,12 @@
-// use nannou::prelude::*;
-use nannou::prelude::{App, Frame, Key, Vec2, pt2, vec2, LoopMode};
 use nannou::color::{hsv, Hsv};
 use nannou::math::deg_to_rad;
+use nannou::noise::{NoiseFn, Perlin, Seedable};
+use nannou::prelude::{pt2, vec2, App, Frame, Key, LoopMode, Vec2};
 use rand::{thread_rng, Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use nannou::noise::{NoiseFn, Perlin, Seedable};
 
 const START_SEED: u32 = 4;
-const WIDTH: u32 = 700;
+const WIDTH: u32 = 850;
 const HEIGHT: u32 = 1080;
 
 fn main() {
@@ -19,6 +18,7 @@ struct Model {
     bg_color: Hsv,
     spiral_points: Vec<(Vec2, Hsv)>,
 }
+
 fn new_point(deg: f32, radius: f32) -> Vec2 {
     let radian = deg_to_rad(deg);
     let y = radius * radian.sin();
@@ -29,6 +29,7 @@ fn new_point(deg: f32, radius: f32) -> Vec2 {
 // TODO support other shapes (after saving best spiral pic):
 // - square
 // - triangle
+// Pass as an input argument
 fn update_model(app: &App, model: &mut Model) {
     let _draw = app.draw();
     let win = app.window_rect().pad(20.0);
@@ -71,7 +72,7 @@ fn model(app: &App) -> Model {
     app.new_window()
         .size(WIDTH, HEIGHT)
         .key_released(key_released)
-        .resizable(true)
+        .resizable(false)
         .build()
         .unwrap();
 
@@ -115,7 +116,7 @@ fn key_released(app: &App, model: &mut Model, key: Key) {
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
-    // Background gradient
+    // Background
     let color = model.bg_color;
     draw.background().color(color);
 
