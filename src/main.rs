@@ -1,12 +1,12 @@
-use nannou::prelude::*;
-use nannou::color::Gradient;
+// use nannou::prelude::*;
+use nannou::prelude::{App, Frame, Key, Vec2, pt2, vec2, LoopMode};
+use nannou::color::{hsv, Hsv};
+use nannou::math::deg_to_rad;
 use rand::{thread_rng, Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use nannou::noise::{NoiseFn, Perlin, Seedable};
-use nannou::app::LoopMode;
-use std::f32;
 
-const START_SEED: u32 = 4; // TODO
+const START_SEED: u32 = 4;
 const WIDTH: u32 = 700;
 const HEIGHT: u32 = 1080;
 
@@ -30,10 +30,10 @@ fn new_point(deg: f32, radius: f32) -> Vec2 {
 // - square
 // - triangle
 fn update_model(app: &App, model: &mut Model) {
-    let draw = app.draw();
+    let _draw = app.draw();
     let win = app.window_rect().pad(20.0);
     let mut seeded_rng = ChaCha8Rng::seed_from_u64(model.seed.into());
-    let mut rng = thread_rng();
+    let _rng = thread_rng();
     let mut deg = 0.0;
     let mut radius = 0.0;
     let mut point = vec2(0.0, 0.0);
@@ -50,8 +50,7 @@ fn update_model(app: &App, model: &mut Model) {
 
         // Radius must increase with exponential noise growth
         // -- tune by changing hardcoded values slightly
-        let noise_radius: f32 = (deg * 0.00001).pow(2.0);
-        // let noise_radius: f32 = (deg * 0.00002).pow(2.2);
+        let noise_radius: f32 = (deg * 0.00001_f32).powf(2.0);
         radius += noise_radius;
 
         // Also have to add "wiggles" to the spiral that
@@ -67,7 +66,7 @@ fn update_model(app: &App, model: &mut Model) {
 }
 
 fn model(app: &App) -> Model {
-    let draw = app.draw();
+    let _draw = app.draw();
 
     app.new_window()
         .size(WIDTH, HEIGHT)
@@ -76,9 +75,7 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    // WAIT loop mode not working??
-    // app.set_loop_mode(LoopMode::NTimes{number_of_updates: 1});
-    // app.set_loop_mode(LoopMode::Wait);
+    app.set_loop_mode(LoopMode::Wait);
 
     let mut model = Model {
         seed: START_SEED,
@@ -112,7 +109,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
     // Background gradient
-    let mut color = model.bg_color;
+    let color = model.bg_color;
     draw.background().color(color);
 
     // Foreground
