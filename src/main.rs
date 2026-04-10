@@ -98,8 +98,15 @@ fn key_released(app: &App, model: &mut Model, key: Key) {
             update_model(app, model);
         }
         nannou::event::Key::Space => {
-            println!("{}", model.seed);
-            // TODO save output jpg/png to working dir too
+            let dir = "favorite_images";
+            // TODO name based on the current shape (circle, square, triangle)
+            let filename = format!("{}/circle-{}.png", dir, model.seed);
+            if let Err(e) = std::fs::create_dir_all(dir) {
+                eprintln!("Error creating directory: {}", e);
+            } else {
+                app.main_window().capture_frame(&filename);
+                println!("Saved to {}", filename);
+            }
         }
         _ => {}
     }
