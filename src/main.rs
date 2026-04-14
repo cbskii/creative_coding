@@ -1,7 +1,7 @@
 use nannou::color::{hsv, Hsv};
 use nannou::math::deg_to_rad;
 use nannou::noise::{NoiseFn, Perlin, Seedable};
-use nannou::prelude::{pt2, vec2, App, Frame, Key, LoopMode, Vec2};
+use nannou::prelude::{pt2, vec2, App, Frame, Key, LoopMode, Rect, Vec2};
 use rand::{thread_rng, Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
@@ -9,44 +9,35 @@ const START_SEED: u32 = 4;
 const WIDTH: u32 = 850;
 const HEIGHT: u32 = 1080;
 
-fn main() {
-    nannou::app(model).view(view).run()
-}
+type ColorPoint = (Vec2, Hsv);
 
 struct Model {
     seed: u32,
     bg_color: Hsv,
-    spiral_points: Vec<(Vec2, Hsv)>,
+    circle_points: Vec<ColorPoint>,
 }
 
-fn new_point(deg: f32, radius: f32) -> Vec2 {
+fn main() {
+    nannou::app(model).view(view).run()
+}
+
+fn new_circle_point(deg: f32, radius: f32) -> Vec2 {
     let radian = deg_to_rad(deg);
     let y = radius * radian.sin();
     let x = radius * radian.cos();
     pt2(x, y)
 }
 
-// TODO support other shapes (after saving best spiral pic):
-// - square
-// - triangle
-// Pass as an input argument
-fn update_model(app: &App, model: &mut Model) {
-    let _draw = app.draw();
-    let win = app.window_rect().pad(20.0);
-    let mut seeded_rng = ChaCha8Rng::seed_from_u64(model.seed.into());
-    let _rng = thread_rng();
+fn get_circle_points(window: Rect<f32>, seeded_rng: &mut ChaCha8Rng, seed: u32) -> Vec<ColorPoint> {
     let mut deg = 0.0;
     let mut radius = 0.0;
     let mut point = vec2(0.0, 0.0);
-
-    model.bg_color = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
-
-    // Foreground spiral
-    model.spiral_points.clear();
+    let mut points: Vec<ColorPoint> = vec![];
     let fg_color: Hsv = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
-    let perlin = Perlin::new().set_seed(model.seed);
+    let perlin = Perlin::new().set_seed(seed);
 
-    while win.contains(point) {
+    while window.contains(point) {
+        points.push((point, fg_color));
         deg += 1.0;
 
         // Radius must increase with exponential noise growth
@@ -54,16 +45,27 @@ fn update_model(app: &App, model: &mut Model) {
         let noise_radius: f32 = (deg * 0.00001_f32).powf(2.0);
         radius += noise_radius;
 
-        // Also have to add "wiggles" to the spiral that
+        // Also have to add "wiggles" to the unraveling line that
         // increase with exponential noise growth
         // -- tune by changing hardcoded values slightly
         let noise_wiggle = perlin.get([deg as f64 * 0.07, 0.0]) as f32 * 0.02 * radius;
         radius += noise_wiggle;
 
-        // Push the newly calculated point
-        point = new_point(deg, radius);
-        model.spiral_points.push((point, fg_color));
+        point = new_circle_point(deg, radius);
     }
+
+    points
+}
+
+fn update_model(app: &App, model: &mut Model) {
+    let window = app.window_rect().pad(20.0);
+    let mut seeded_rng = ChaCha8Rng::seed_from_u64(model.seed.into());
+
+    model.bg_color = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
+    // TODO alternate displaying rect, circle, triangle based on seed % 3
+    model.circle_points = get_circle_points(window, &mut seeded_rng, model.seed);
+    // model.rect_points = get_rect_points(window, model.seed.into());
+    // model.triangle_points = get_triangle_points(window, model.seed.into());
 }
 
 fn model(app: &App) -> Model {
@@ -81,7 +83,7 @@ fn model(app: &App) -> Model {
     let mut model = Model {
         seed: START_SEED,
         bg_color: hsv(0.0, 0.0, 0.0),
-        spiral_points: vec![],
+        circle_points: vec![],
     };
 
     update_model(app, &mut model);
@@ -100,8 +102,7 @@ fn key_released(app: &App, model: &mut Model, key: Key) {
         }
         nannou::event::Key::Space => {
             let dir = "favorite_images";
-            // TODO name based on the current shape (circle, square, triangle)
-            let filename = format!("{}/circle-{}.png", dir, model.seed);
+            let filename = format!("{}/{}.png", dir, model.seed);
             if let Err(e) = std::fs::create_dir_all(dir) {
                 eprintln!("Error creating directory: {}", e);
             } else {
@@ -123,6 +124,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
     // Foreground
     draw.polyline()
         .weight(6.0)
-        .points_colored(model.spiral_points.clone());
+        .points_colored(model.circle_points.clone());
+    // draw.polyline()
+    // .weight(2.0)
+    // .points(model.circle_points.iter().map(|(p, _)| *p))
+    // .rgb(1.0, 1.0, 1.0);
     draw.to_frame(app, &frame).unwrap();
 }
