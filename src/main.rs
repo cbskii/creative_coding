@@ -5,9 +5,15 @@ use nannou::prelude::{pt2, vec2, App, Frame, Key, LoopMode, Rect, Vec2};
 use rand::{thread_rng, Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
+// Start seed chosen based on preference
 const START_SEED: u32 = 4;
-const WIDTH: u32 = 850;
+
+// Output size
+const WIDTH: u32 = 720;
 const HEIGHT: u32 = 1080;
+
+// Whether to use black and white or random colors
+const COLOR_MODE: bool = true;
 
 type ColorPoint = (Vec2, Hsv);
 
@@ -28,12 +34,11 @@ fn new_circle_point(deg: f32, radius: f32) -> Vec2 {
     pt2(x, y)
 }
 
-fn get_circle_points(window: Rect<f32>, seeded_rng: &mut ChaCha8Rng, seed: u32) -> Vec<ColorPoint> {
+fn get_circle_points(window: Rect<f32>, fg_color: Hsv, seed: u32) -> Vec<ColorPoint> {
     let mut deg = 0.0;
     let mut radius = 0.0;
     let mut point = vec2(0.0, 0.0);
     let mut points: Vec<ColorPoint> = vec![];
-    let fg_color: Hsv = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
     let perlin = Perlin::new().set_seed(seed);
 
     while window.contains(point) {
@@ -60,10 +65,17 @@ fn get_circle_points(window: Rect<f32>, seeded_rng: &mut ChaCha8Rng, seed: u32) 
 fn update_model(app: &App, model: &mut Model) {
     let window = app.window_rect().pad(20.0);
     let mut seeded_rng = ChaCha8Rng::seed_from_u64(model.seed.into());
+    let mut bg_color = hsv(0.0, 0.0, 1.0);
+    let mut fg_color = hsv(0.0, 0.0, 0.0);
 
-    model.bg_color = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
+    if COLOR_MODE {
+        bg_color = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
+        fg_color = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
+    }
+
+    model.bg_color = bg_color;
+    model.circle_points = get_circle_points(window, fg_color, model.seed);
     // TODO alternate displaying rect, circle, triangle based on seed % 3
-    model.circle_points = get_circle_points(window, &mut seeded_rng, model.seed);
     // model.rect_points = get_rect_points(window, model.seed.into());
     // model.triangle_points = get_triangle_points(window, model.seed.into());
 }
@@ -125,9 +137,5 @@ fn view(app: &App, model: &Model, frame: Frame) {
     draw.polyline()
         .weight(6.0)
         .points_colored(model.circle_points.clone());
-    // draw.polyline()
-    // .weight(2.0)
-    // .points(model.circle_points.iter().map(|(p, _)| *p))
-    // .rgb(1.0, 1.0, 1.0);
     draw.to_frame(app, &frame).unwrap();
 }
