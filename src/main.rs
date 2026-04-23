@@ -42,12 +42,12 @@ fn get_spiral_points(
     let deg_jump = 360.0 / shape_sides as f32;
 
     // Tuning smoothness and noisyness
-    let noise_scale = 0.018;
-    let percent_radius_for_noise = 0.10;
+    let noise_scale = 0.06;
+    let percent_radius_for_noise = 0.07;
     let num_points_between_corners = 360 * 4 / shape_sides;
 
     // Tuning spiral growth
-    let growth_per_rotation: f32 = 1.13;
+    let growth_per_rotation: f32 = 1.1;
     let growth_factor = growth_per_rotation.powf(deg_jump / 360.0);
 
     loop {
@@ -67,8 +67,8 @@ fn get_spiral_points(
             .map(|i| {
                 let percent = i as f32 / num_points_between_corners as f32;
                 let point = start_point.lerp(end_point, percent);
-                let noise: f32 =
-                    perlin.get([point.x as f64 * noise_scale, point.y as f64 * noise_scale]) as f32;
+                let cur_deg = deg + (deg_jump * percent);
+                let noise: f32 = perlin.get([cur_deg as f64 * noise_scale, seed as f64]) as f32;
                 let noisy_point = point + (point * percent_radius_for_noise * noise);
                 (noisy_point, fg_color)
             })
