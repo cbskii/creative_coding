@@ -6,7 +6,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 // Start seed chosen based on preference
-const START_SEED: u32 = 0;
+const START_SEED: u32 = 4;
 
 // Output size
 const WIDTH: u32 = 720;
@@ -36,38 +36,56 @@ fn get_spiral_points(
 ) -> Vec<ColorPoint> {
     let mut deg = 0.0;
     let mut radius = 0.1;
-    let mut noisy_radius;
-    let noise_scale = 0.07;
-    let base_growth = 30.0 / shape_sides as f32;
-    let mut point = vec2(0.0, 0.0);
+    let mut start_point = vec2(0.0, 0.0);
     let mut points: Vec<ColorPoint> = vec![];
     let perlin = Perlin::new().set_seed(seed);
     let deg_jump = 360.0 / shape_sides as f32;
 
-    // To create a spiral for any shape we add a point for each corner
-    // and draw a line between corners. The corner connecting is handled by
-    // using the corner points to draw a polyline. Each corner is determined by
-    // calculating the angle difference between each corner. As the angle
-    // increases the radius increases as well to produce a spiral. Perlin
-    // noise is added to the radius to create "wiggly" lines and the noise
-    // grows as the radius grows.
-    while window.contains(point) {
-        points.push((point, fg_color));
-        deg += deg_jump;
-        radius += base_growth;
+    // Tuning smoothness and noisyness
+    let noise_scale = 0.018;
+    let percent_radius_for_noise = 0.10;
+    let num_points_between_corners = 360 * 4 / shape_sides;
+
+    // Tuning spiral growth
+    let growth_per_rotation: f32 = 1.13;
+    let growth_factor = growth_per_rotation.powf(deg_jump / 360.0);
+
+    loop {
+        // The shape is drawn by connecting all corners. The angle of
+        // each corner is determined by the number of sides of the shape.
+        // The radius of each corner is incremented to create a growing spiral effect.
+        // Calculate start and end points that connect two of the corners.
         let radian = deg_to_rad(deg + rotate_deg);
-        let noise: f32 = perlin.get([deg as f64 * noise_scale, seed as f64]) as f32;
-        noisy_radius = radius + (noise * radius * 0.02);
-        point = pt2(noisy_radius * radian.cos(), noisy_radius * radian.sin());
+        let end_point = pt2(radius * radian.cos(), radius * radian.sin());
+        if !window.contains(start_point) || !window.contains(end_point) {
+            break;
+        }
+
+        // Create a line of points between start and end using linear interpolation.
+        // For each point add perlin noise to create a "wiggle" effect.
+        let noisy_points: Vec<ColorPoint> = (0..num_points_between_corners)
+            .map(|i| {
+                let percent = i as f32 / num_points_between_corners as f32;
+                let point = start_point.lerp(end_point, percent);
+                let noise: f32 =
+                    perlin.get([point.x as f64 * noise_scale, point.y as f64 * noise_scale]) as f32;
+                let noisy_point = point + (point * percent_radius_for_noise * noise);
+                (noisy_point, fg_color)
+            })
+            .collect();
+
+        // Push all noisy points and proceed to the next corner
+        points.extend(noisy_points);
+        start_point = end_point;
+        deg += deg_jump;
+        radius *= growth_factor;
     }
 
     points
 }
 
 fn update_model(app: &App, model: &mut Model) {
-    let mut num_sides: u32;
-    let min_num_sides = 2;
-    let max_num_sides = 5;
+    let num_sides: u32;
     let circle_num_sides = 360;
     let window = app.window_rect().pad(20.0);
     let mut seeded_rng = ChaCha8Rng::seed_from_u64(model.seed.into());
@@ -79,20 +97,21 @@ fn update_model(app: &App, model: &mut Model) {
         fg_color = hsv(seeded_rng.gen(), seeded_rng.gen(), seeded_rng.gen());
     }
 
-    num_sides = min_num_sides + model.seed % max_num_sides;
-    if num_sides == min_num_sides {
-        num_sides = circle_num_sides;
+    // Cycle between various number of shapes
+    // (order chosen based on preference with seeds)
+    let num_shapes = 3;
+    match model.seed % num_shapes {
+        0 => num_sides = 4,
+        1 => num_sides = circle_num_sides,
+        2 => num_sides = 3,
+        _ => unreachable!(),
     }
 
-    // Generate a random "unraveling" spiraled shape at some degree of rotation
+    // Generate a random "unraveling" spiraled shape and rotate so
+    // it is roughly parallel to x-axis
+    let rotation = (180.0 / num_sides as f32) - 90.0;
     model.bg_color = bg_color;
-    model.fg_points = get_spiral_points(
-        num_sides,
-        seeded_rng.gen_range(0..=360) as f32,
-        window,
-        fg_color,
-        model.seed,
-    );
+    model.fg_points = get_spiral_points(num_sides, rotation, window, fg_color, model.seed);
 }
 
 fn model(app: &App) -> Model {
