@@ -42,12 +42,12 @@ fn get_spiral_points(
     let deg_jump = 360.0 / shape_sides as f32;
 
     // Tuning smoothness and noisyness
-    let noise_scale = 0.06;
-    let percent_radius_for_noise = 0.07;
+    let noise_scale = 0.03;
+    let percent_radius_for_noise = 0.08;
     let num_points_between_corners = 360 * 4 / shape_sides;
 
     // Tuning spiral growth
-    let growth_per_rotation: f32 = 1.1;
+    let growth_per_rotation: f32 = 1.05;
     let growth_factor = growth_per_rotation.powf(deg_jump / 360.0);
 
     loop {
@@ -148,7 +148,12 @@ fn key_released(app: &App, model: &mut Model, key: Key) {
         }
         nannou::event::Key::Space => {
             let dir = "favorite_images";
-            let filename = format!("{}/{}.png", dir, model.seed);
+            let filename = format!(
+                "{}/{}{}.png",
+                dir,
+                model.seed,
+                if COLOR_MODE { "" } else { "-bw" }
+            );
             if let Err(e) = std::fs::create_dir_all(dir) {
                 eprintln!("Error creating directory: {}", e);
             } else {
