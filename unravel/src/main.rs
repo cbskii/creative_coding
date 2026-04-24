@@ -150,9 +150,10 @@ fn key_released(app: &App, model: &mut Model, key: Key) {
             update_model(app, model);
         }
         nannou::event::Key::Space => {
+            // Expects to be run from root workspace directory
             let dir = "favorite_images";
             let filename = format!(
-                "{}/{}{}.png",
+                "{}/unravel-{}{}.png",
                 dir,
                 model.seed,
                 if COLOR_MODE { "" } else { "-bw" }
