@@ -20,6 +20,7 @@ type ColorPoint = (Vec2, Hsv);
 struct Model {
     seed: u32,
     bg_color: Hsv,
+    fg_color: Hsv,
     fg_points: Vec<ColorPoint>,
 }
 
@@ -111,6 +112,7 @@ fn update_model(app: &App, model: &mut Model) {
     // it is roughly parallel to x-axis
     let rotation = (180.0 / num_sides as f32) - 90.0;
     model.bg_color = bg_color;
+    model.fg_color = fg_color;
     model.fg_points = get_spiral_points(num_sides, rotation, window, fg_color, model.seed);
 }
 
@@ -129,6 +131,7 @@ fn model(app: &App) -> Model {
     let mut model = Model {
         seed: START_SEED,
         bg_color: hsv(0.0, 0.0, 0.0),
+        fg_color: hsv(0.0, 0.0, 0.0),
         fg_points: vec![],
     };
 
@@ -167,14 +170,21 @@ fn key_released(app: &App, model: &mut Model, key: Key) {
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
+    let window = app.window_rect();
 
     // Background
-    let color = model.bg_color;
-    draw.background().color(color);
+    draw.background().color(model.bg_color);
 
-    // Foreground
+    // Foreground shape
     draw.polyline()
         .weight(6.0)
         .points_colored(model.fg_points.clone());
+
+    // Seed number
+    draw.text(&format!("Seed: {}", model.seed))
+    .font_size(16)
+    .x_y(window.left() + 80.0, window.top() - 20.0)
+    .color(model.fg_color);
+
     draw.to_frame(app, &frame).unwrap();
 }
