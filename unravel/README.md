@@ -10,3 +10,10 @@ Below are some examples of the generated output:
 <img width="350" alt="unravel-47" src="https://github.com/user-attachments/assets/7a313216-f771-4bf9-a9bf-7c3309c08eb9" />
 <img width="350" alt="unravel-4294967286" src="https://github.com/user-attachments/assets/4c6f4ce5-4515-4230-a2d0-f61a55a9c1c9" />
 </p>
+
+<br>
+The noise parameters can be adjusted to produce very different results. For example:
+<p align="left">
+<img width="350" alt="unravel-4" src="https://github.com/user-attachments/assets/abaa61b8-d9dd-4315-b3cd-6c1a90ef5e54" />
+<img width="350" alt="circle-4" src="https://github.com/user-attachments/assets/bca96c7e-4251-43df-bf31-e30aff4a7af0" />
+</p>
