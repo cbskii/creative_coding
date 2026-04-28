@@ -183,9 +183,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     // Seed number
     draw.text(&format!("Seed: {}", model.seed))
-    .font_size(16)
-    .x_y(window.left() + 80.0, window.top() - 20.0)
-    .color(model.fg_color);
+        .font_size(16)
+        .x_y(window.left() + 80.0, window.top() - 20.0)
+        .color(model.fg_color);
 
     draw.to_frame(app, &frame).unwrap();
 }
